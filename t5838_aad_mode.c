@@ -1,9 +1,10 @@
 /** @file t5838_aad_mode.c
  *
- * @brief A description of the module's purpose.
+ * @brief Functions related to the configuration of the AAD modes
+ *  of the T5838 MEMS microphone by TDK.
  *
- * @par
- * COPYRIGHT NOTICE: (c) 2023 Irnas. All rights reserved.
+ * @copyright (c) 2023 Irnas. All rights reserved.
+ * @copyright (c) 2025 Ysard. All rights reserved.
  */
 
 #include "t5838.h"
