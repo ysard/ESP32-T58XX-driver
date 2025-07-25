@@ -291,6 +291,18 @@ esp_err_t prv_aad_mode_set(const struct device *dev, struct t5838_address_data_p
 
 	/** Note: The test to make sure there is no PDM transfer in progress, and we can take clock signal
 	 * is made in prv_aad_unlock_sequence & prv_reg_write */
+
+	/** Between AAD mode config & AAD activation with the sleep sequence,
+	 * there is an acknowledgement on the WAKE pin of 12us.
+	 * We disable the interrupt to avoid false triggers. */
+	if (drv_cfg->wake_available && drv_data->cb_configured) {
+		err = gpio_intr_disable(drv_cfg->wake);
+		if (err != ESP_OK) {
+			ESP_LOGE(TAG, "gpio_intr_disable failed: %d", err);
+			return err;
+		}
+	}
+
 	if (drv_data->aad_unlocked == false) {
 		err = prv_aad_unlock_sequence(dev);
 		if (err != ESP_OK) {
@@ -304,9 +316,7 @@ esp_err_t prv_aad_mode_set(const struct device *dev, struct t5838_address_data_p
 		ESP_LOGE(TAG, "prv_t5838_multi_reg_write, err: %d", err);
 		return err;
 	}
-	// TODO: between AAD mode conf & AAD activation with the sleep seq, there is
-	// an acknowledgement of the WAKE pin of 12us...
-	// if interrupt was already configured via this func it should be disabled gpio_intr_disable at the beginning of this func if cb_configured == true?
+
 	t5838_aad_sleep(dev);
 
 	pdm_data->aad_child_dev = dev;
