@@ -14,6 +14,7 @@
 
 #include "driver/gpio.h"
 #include "driver/i2s_types.h"
+#include "driver/i2s_pdm.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -366,6 +367,17 @@ esp_err_t t5838_aad_sleep(const struct device *dev);
  * @retval negative errno code if otherwise.
  */
 esp_err_t t5838_aad_init(const struct device *dev);
+
+/**
+ * @brief Init the T5838 PDM device & prepare AAD settings.
+ *
+ * @param[in] pdm_rx_cfg I2S PDM configuration.
+ * @param[in] chan_cfg Pointer to channel configuration, can be left to NULL automatically select the I2S port.
+ * @param[in] t5838_aad_cfg Pointer to AAD pinout configuration.
+ * @param[out] dev Pointer to device structure which will be populated, ready to be used for AAD configurations.
+ * @param[out] rx_handle Pointer to the channel handle, which will be populated.
+ */
+esp_err_t t5838_init(const i2s_pdm_rx_config_t *pdm_rx_cfg, i2s_chan_config_t *chan_cfg, struct t5838_aad_drv_cfg *t5838_aad_cfg, struct device *dev, i2s_chan_handle_t *rx_handle);
 
 #endif /* CONFIG_T5838_AAD_TRIGGER */
 
