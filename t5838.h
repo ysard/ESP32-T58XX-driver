@@ -9,16 +9,16 @@
 #ifndef T5838_H
 #define T5838_H
 
+#include "esp_log.h"
+#include <stdint.h>
+
+#include "driver/gpio.h"
+#include "driver/i2s_types.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <zephyr/drivers/clock_control/nrf_clock_control.h>
-#include <zephyr/drivers/gpio.h>
-
-#include <nrfx_pdm.h>
-
-#include <stdint.h>
 
 #define T5838_REG_AAD_MODE			 0x29
 #define T5838_REG_AAD_D_FLOOR_HI		 0x2A
@@ -31,6 +31,16 @@ extern "C" {
 #define T5838_REG_AAD_D_REL_THR			 0x33
 #define T5838_REG_AAD_A_LPF			 0x35
 #define T5838_REG_AAD_A_THR			 0x36
+
+/**
+ * @brief Mimic minimal Zephyr device structure
+ */
+struct device {
+	// Address of device instance config information.
+    const void *config;
+	// Address of the device instance private data.
+    void *data;
+};
 
 /**
  * @brief AAD modes
@@ -195,58 +205,56 @@ struct t5838_aad_d_conf {
 	enum t5838_aad_d_rel_thr aad_d_rel_thr;
 };
 
-struct t5838_drv_data {
-	struct onoff_manager *clk_mgr;
-	struct onoff_client clk_cli;
-	struct k_mem_slab *mem_slab;
-	uint32_t block_size;
-	struct k_msgq rx_queue;
-	bool request_clock : 1;
-	bool configured : 1;
-	volatile bool active;
-	volatile bool stopping;
+// struct t5838_drv_data {
+// 	struct onoff_manager *clk_mgr;
+// 	struct onoff_client clk_cli;
+// 	struct k_mem_slab *mem_slab;
+// 	uint32_t block_size;
+// 	struct k_msgq rx_queue;
+// 	bool request_clock : 1;
+// 	bool configured : 1;
+// 	volatile bool active;
+// 	volatile bool stopping;
+//
+// #ifdef CONFIG_T5838_AAD_TRIGGER
+// 	/* Pointer to child device for putting device back into low power after sampling */
+// 	const struct device *aad_child_dev;
+// #endif /* CONFIG_T5838_AAD_TRIGGER */
+// };
 
+struct t5838_drv_data {
+	i2s_chan_handle_t rx_handle;
 #ifdef CONFIG_T5838_AAD_TRIGGER
 	/* Pointer to child device for putting device back into low power after sampling */
 	const struct device *aad_child_dev;
 #endif /* CONFIG_T5838_AAD_TRIGGER */
 };
 
-struct t5838_drv_cfg {
-	nrfx_pdm_event_handler_t event_handler;
-	nrfx_pdm_config_t nrfx_def_cfg;
-	const struct pinctrl_dev_config *pcfg;
-	enum clock_source {
-		PCLK32M,
-		PCLK32M_HFXO,
-		ACLK
-	} clk_src;
-};
-
 #ifdef CONFIG_T5838_AAD_TRIGGER
 struct t5838_aad_drv_cfg {
 	const struct device *pdm_dev;
 
-	const struct gpio_dt_spec micen;
-	bool micen_available;
+    const gpio_num_t micen;
+    bool micen_available; // true: support for load switch
 
-	const struct gpio_dt_spec wake;
-	const struct gpio_dt_spec thsel;
-	const struct gpio_dt_spec pdmclk;
+    const gpio_num_t wake;
+	bool wake_available; // false: manually handled outside the lib
+
+    const gpio_num_t thsel;
+    const gpio_num_t pdmclk;
 };
 
 struct t5838_aad_drv_data {
-
-	bool aad_unlocked;
+    bool aad_unlocked;
 	enum t5838_aad_select aad_enabled_mode;
 
-	struct gpio_callback wake_cb;
-	bool cb_configured;
-	bool int_handled;
-	t5838_wake_handler_t wake_handler;
+    bool cb_configured;
+    bool int_handled;
+    t5838_wake_handler_t wake_handler;
 
-	const struct t5838_aad_drv_cfg *aad_cfg;
+    const struct t5838_aad_drv_cfg *aad_cfg;
 };
+
 #endif /* CONFIG_T5838_AAD_TRIGGER */
 
 #ifdef CONFIG_T5838_AAD_TRIGGER
@@ -254,7 +262,7 @@ struct t5838_aad_drv_data {
  * @brief Set AAD wake pin interrupt handler function
  *
  * Function will set handler function to be called when interrupt is triggered. We can set handler
- * at any time, but t5838_configure_AAD() must be called for interrupt triggering to be enabled.
+ * at any time, but t5838_aad_<*>_mode_set() must be called for interrupt triggering to be enabled.
  *
  * @note when interrupt gets triggered it will disable further interrupts until
  * t5838_wake_clear() is called.
@@ -272,7 +280,7 @@ void t5838_aad_wake_handler_set(const struct device *dev, t5838_wake_handler_t h
  * @retval 0 if successful.
  * @retval negative errno code if othewise.
  */
-int t5838_aad_wake_clear(const struct device *dev);
+esp_err_t t5838_aad_wake_clear(const struct device *dev);
 
 /**
  * @brief Configure T5838 device into AAD A mode
@@ -285,7 +293,7 @@ int t5838_aad_wake_clear(const struct device *dev);
  * @retval 0 if successful.
  * @retval negative errno code if othewise.
  */
-int t5838_aad_a_mode_set(const struct device *dev, struct t5838_aad_a_conf *aadconf);
+esp_err_t t5838_aad_a_mode_set(const struct device *dev, struct t5838_aad_a_conf *aadconf);
 
 /**
  * @brief Configure T5838 device into AAD D1 mode
@@ -298,7 +306,7 @@ int t5838_aad_a_mode_set(const struct device *dev, struct t5838_aad_a_conf *aadc
  * @retval 0 if successful.
  * @retval negative errno code if othewise.
  */
-int t5838_aad_d1_mode_set(const struct device *dev, struct t5838_aad_d_conf *aadconf);
+esp_err_t t5838_aad_d1_mode_set(const struct device *dev, struct t5838_aad_d_conf *aadconf);
 
 /**
  * @brief Configure T5838 device into AAD D2 mode
@@ -311,7 +319,7 @@ int t5838_aad_d1_mode_set(const struct device *dev, struct t5838_aad_d_conf *aad
  * @retval 0 if successful.
  * @retval negative errno code if othewise.
  */
-int t5838_aad_d2_mode_set(const struct device *dev, struct t5838_aad_d_conf *aadconf);
+esp_err_t t5838_aad_d2_mode_set(const struct device *dev, struct t5838_aad_d_conf *aadconf);
 
 /**
  * @brief Disable AAD functionality
@@ -323,27 +331,41 @@ int t5838_aad_d2_mode_set(const struct device *dev, struct t5838_aad_d_conf *aad
  * @retval 0 if successful.
  * @retval negative errno code if othewise.
  */
-int t5838_aad_mode_disable(const struct device *dev);
+esp_err_t t5838_aad_mode_disable(const struct device *dev);
 
 /**
  * @brief Reset T5838 device using mic enable pin GPIO
+ *
+ * @note Do not use if mic enable pin is not configured.
  *
  * @param[in] dev Pointer to the device structure for the driver instance.
  *
  * @retval 0 if successful.
  * @retval negative errno code if othewise.
  */
-int t5838_reset(const struct device *dev);
+esp_err_t t5838_reset(const struct device *dev);
 
 /**
- * @brief Function for putting T5838 into sleep mode with AAD is enabled. Must be called after
+ * @brief Function for putting T5838 into sleep mode with AAD is enabled. Is called after
  * writing to AAD registers.
  *
- * function clocks device for value set in T5838_ENTER_SLEEP_MODE_CLOCKING_TIME_US to enable AAD.
+ * @note Make sure that the interrupt has been rearmed via `t5838_aad_wake_clear`.
  *
+ * function clocks device for value set in T5838_ENTER_SLEEP_MODE_CLOCKING_TIME_US to enable AAD.
+ * TODO: make sure t5838_aad_wake_clear is called to rearm the interrupt
  * @param[in] dev Pointer to the device structure for the driver instance.
  */
-void t5838_aad_sleep(const struct device *dev);
+esp_err_t t5838_aad_sleep(const struct device *dev);
+
+/**
+ * @brief Function for initializing T5838 AAD trigger device. Called during device boot.
+ *
+ * @param[in] dev Pointer to the device structure for the driver instance.
+ *
+ * @retval 0 if successful.
+ * @retval negative errno code if otherwise.
+ */
+esp_err_t t5838_aad_init(const struct device *dev);
 
 #endif /* CONFIG_T5838_AAD_TRIGGER */
 
