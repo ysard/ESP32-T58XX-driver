@@ -315,23 +315,30 @@ esp_err_t prv_aad_mode_set(const struct device *dev, struct t5838_address_data_p
 
 	pdm_data->aad_child_dev = dev;
 
-	/** Configure interrupts */ // TODO: option to avoid interrupt config ?
-	if (drv_cfg->wake_available && drv_data->cb_configured == false) {
-		drv_data->int_handled = false; // Clear interrupt
+	/** Configure interrupts */
+	if (drv_cfg->wake_available) {
+		if (drv_data->cb_configured == false) {
+			drv_data->int_handled = false; // Clear interrupt
 
-		err = gpio_set_intr_type(drv_cfg->wake, GPIO_INTR_POSEDGE);
+			err = gpio_set_intr_type(drv_cfg->wake, GPIO_INTR_POSEDGE);
+			if (err != ESP_OK) {
+				ESP_LOGE(TAG, "gpio_set_intr_type failed: %d", err);
+				return err;
+			}
+
+			// Register the handler
+			err = gpio_isr_handler_add(drv_cfg->wake, prv_wake_cb_handler, (void *)dev);
+			if (err != ESP_OK) {
+				ESP_LOGE(TAG, "gpio_isr_handler_add failed: %d", err);
+				return err;
+			}
+			drv_data->cb_configured = true;
+		}
+		err = gpio_intr_enable(drv_cfg->wake);
 		if (err != ESP_OK) {
-			ESP_LOGE(TAG, "gpio_set_intr_type failed: %d", err);
+			ESP_LOGE(TAG, "gpio_intr_enable failed: %d", err);
 			return err;
 		}
-
-		// Register the handler
-		err = gpio_isr_handler_add(drv_cfg->wake, prv_wake_cb_handler, (void *)dev);
-		if (err != ESP_OK) {
-			ESP_LOGE(TAG, "gpio_isr_handler_add failed: %d", err);
-			return err;
-		}
-		drv_data->cb_configured = true;
 	}
 	return ESP_OK;
 }
