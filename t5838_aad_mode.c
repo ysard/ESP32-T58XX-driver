@@ -242,7 +242,6 @@ esp_err_t t5838_reset(const struct device *dev)
 	return ESP_OK;
 }
 
-// TODO: check interrupt clear, why reconfig with gpio_set_intr_type ? => because disabled in the ISR
 esp_err_t t5838_aad_wake_clear(const struct device *dev)
 {
 	const struct t5838_aad_drv_cfg *drv_cfg = dev->config;
@@ -255,6 +254,7 @@ esp_err_t t5838_aad_wake_clear(const struct device *dev)
 	}
 
 	if (drv_data->cb_configured) {
+		// Rearm the interrupt previously disabled in the ISR
 		err = gpio_intr_enable(drv_cfg->wake);
 		if (err != ESP_OK) {
 			ESP_LOGE(TAG, "gpio_intr_enable failed: %d", err);
@@ -437,7 +437,6 @@ esp_err_t t5838_aad_mode_disable(const struct device *dev)
 			return err;
 		}
 	}
-	// TODO: handle if interrupt not supported...
 	drv_data->aad_enabled_mode = T5838_AAD_SELECT_NONE;
 	drv_data->aad_unlocked = false;
 	pdm_data->aad_child_dev = NULL;
