@@ -286,15 +286,11 @@ esp_err_t prv_aad_mode_set(const struct device *dev, struct t5838_address_data_p
 {
 	const struct t5838_aad_drv_cfg *drv_cfg = dev->config;
 	struct t5838_aad_drv_data *drv_data = dev->data;
+	struct t5838_drv_data *pdm_data = drv_cfg->pdm_dev->data;
 	esp_err_t err;
 
-	// TODO: useless test made later in prv_aad_unlock_sequence via prv_reg_write call...
-	/** Make sure there is no PDM transfer in progress, and we can take clock signal */
-	struct t5838_drv_data *pdm_data = drv_cfg->pdm_dev->data;
-	if (pdm_data->rx_handle->state == I2S_CHAN_STATE_RUNNING) {
-		ESP_LOGE(TAG, "Cannot write to device while pdm is active");
-		return ESP_ERR_INVALID_STATE;
-	}
+	/** Note: The test to make sure there is no PDM transfer in progress, and we can take clock signal
+	 * is made in prv_aad_unlock_sequence & prv_reg_write */
 	if (drv_data->aad_unlocked == false) {
 		err = prv_aad_unlock_sequence(dev);
 		if (err != ESP_OK) {
