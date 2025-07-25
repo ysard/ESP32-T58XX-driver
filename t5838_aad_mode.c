@@ -247,6 +247,12 @@ esp_err_t t5838_aad_wake_clear(const struct device *dev)
 	const struct t5838_aad_drv_cfg *drv_cfg = dev->config;
 	struct t5838_aad_drv_data *drv_data = dev->data;
 	esp_err_t err;
+
+	if (!drv_cfg->wake_available) {
+		ESP_LOGE(TAG, "interrupt is not available (managed externally)");
+		return ESP_ERR_NOT_ALLOWED;
+	}
+
 	if (drv_data->cb_configured) {
 		err = gpio_intr_enable(drv_cfg->wake);
 		if (err != ESP_OK) {
@@ -309,7 +315,7 @@ esp_err_t prv_aad_mode_set(const struct device *dev, struct t5838_address_data_p
 	pdm_data->aad_child_dev = dev;
 
 	/** Configure interrupts */ // TODO: option to avoid interrupt config ?
-	if (drv_data->cb_configured == false) {
+	if (drv_cfg->wake_available && drv_data->cb_configured == false) {
 		drv_data->int_handled = false; // Clear interrupt
 
 		err = gpio_set_intr_type(drv_cfg->wake, GPIO_INTR_POSEDGE);
@@ -410,10 +416,12 @@ esp_err_t t5838_aad_mode_disable(const struct device *dev)
 		return err;
 	}
 	/** Disable interrupts */
-	err = gpio_intr_disable(drv_cfg->wake);
-	if (err != ESP_OK) {
-		ESP_LOGE(TAG, "gpio_pin_interrupt_configure_dt, err: %d", err);
-		return err;
+	if (drv_cfg->wake_available) {
+		err = gpio_intr_disable(drv_cfg->wake);
+		if (err != ESP_OK) {
+			ESP_LOGE(TAG, "gpio_intr_disable, err: %d", err);
+			return err;
+		}
 	}
 	// TODO: handle if interrupt not supported...
 	drv_data->aad_enabled_mode = T5838_AAD_SELECT_NONE;
@@ -430,20 +438,12 @@ esp_err_t t5838_aad_init(const struct device *dev)
 	/* T5838 specific configuration */
 	gpio_config_t io_conf = {
 		.intr_type = GPIO_INTR_DISABLE,
-		.mode = GPIO_MODE_INPUT,
-		.pin_bit_mask = 1ULL << drv_cfg->wake,
+		.mode = GPIO_MODE_OUTPUT,
+		.pin_bit_mask = 1ULL << drv_cfg->thsel,
 		.pull_down_en = 0,
 		.pull_up_en = 0
 	};
 	esp_err_t err = gpio_config(&io_conf);
-	if (err != ESP_OK) {
-		ESP_LOGE(TAG, "Failed to configure WAKE pin");
-		return err;
-	}
-
-	io_conf.mode = GPIO_MODE_OUTPUT;
-	io_conf.pin_bit_mask = 1ULL << drv_cfg->thsel;
-	err = gpio_config(&io_conf);
 	if (err != ESP_OK) {
 		ESP_LOGE(TAG, "Failed to configure THSEL pin");
 		return err;
@@ -465,6 +465,16 @@ esp_err_t t5838_aad_init(const struct device *dev)
 			return err;
 		}
 		t5838_reset(dev);
+	}
+
+	if (drv_cfg->wake_available) {
+		io_conf.mode = GPIO_MODE_INPUT;
+		io_conf.pin_bit_mask = 1ULL << drv_cfg->wake;
+		err = gpio_config(&io_conf);
+		if (err != ESP_OK) {
+			ESP_LOGE(TAG, "Failed to configure WAKE pin");
+			return err;
+		}
 	}
 
 	drv_data->aad_cfg = drv_cfg;
