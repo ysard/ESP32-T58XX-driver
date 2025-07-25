@@ -248,9 +248,9 @@ esp_err_t t5838_aad_wake_clear(const struct device *dev)
 	struct t5838_aad_drv_data *drv_data = dev->data;
 	esp_err_t err;
 	if (drv_data->cb_configured) {
-		err = gpio_set_intr_type(drv_cfg->wake, GPIO_INTR_POSEDGE);
+		err = gpio_intr_enable(drv_cfg->wake);
 		if (err != ESP_OK) {
-			ESP_LOGE(TAG, "gpio_set_intr_type failed: %d", err);
+			ESP_LOGE(TAG, "gpio_intr_enable failed: %d", err);
 			return err;
 		}
 	}
@@ -312,6 +312,12 @@ esp_err_t prv_aad_mode_set(const struct device *dev, struct t5838_address_data_p
 	if (drv_data->cb_configured == false) {
 		drv_data->int_handled = false; // Clear interrupt
 
+		err = gpio_set_intr_type(drv_cfg->wake, GPIO_INTR_POSEDGE);
+		if (err != ESP_OK) {
+			ESP_LOGE(TAG, "gpio_set_intr_type failed: %d", err);
+			return err;
+		}
+
 		// Register the handler
 		err = gpio_isr_handler_add(drv_cfg->wake, prv_wake_cb_handler, (void *)dev);
 		if (err != ESP_OK) {
@@ -319,11 +325,6 @@ esp_err_t prv_aad_mode_set(const struct device *dev, struct t5838_address_data_p
 			return err;
 		}
 		drv_data->cb_configured = true;
-	}
-	err = gpio_set_intr_type(drv_cfg->wake, GPIO_INTR_POSEDGE); // TODO why everytime ?
-	if (err != ESP_OK) {
-		ESP_LOGE(TAG, "gpio_set_intr_type failed: %d", err);
-		return err;
 	}
 	return ESP_OK;
 }
