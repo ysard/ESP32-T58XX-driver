@@ -368,6 +368,8 @@ esp_err_t t5838_aad_sleep(const struct device *dev);
  */
 esp_err_t t5838_aad_init(const struct device *dev);
 
+#endif /* CONFIG_T5838_AAD_TRIGGER */
+
 /**
  * @brief Init the T5838 PDM device & prepare AAD settings.
  *
@@ -378,8 +380,6 @@ esp_err_t t5838_aad_init(const struct device *dev);
  * @param[out] rx_handle Pointer to the channel handle, which will be populated.
  */
 esp_err_t t5838_init(const i2s_pdm_rx_config_t *pdm_rx_cfg, i2s_chan_config_t *chan_cfg, struct t5838_aad_drv_cfg *t5838_aad_cfg, struct device *dev, i2s_chan_handle_t *rx_handle);
-
-#endif /* CONFIG_T5838_AAD_TRIGGER */
 
 #ifdef __cplusplus
 }
