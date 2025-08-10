@@ -35,6 +35,7 @@ esp_err_t pdm_init(const i2s_pdm_rx_config_t *pdm_rx_cfg, i2s_chan_config_t *cha
     }
 }
 
+#ifdef CONFIG_T58XX_AAD_TRIGGER
 
 esp_err_t t5838_init(const i2s_pdm_rx_config_t *pdm_rx_cfg, i2s_chan_config_t *chan_cfg, struct t58xx_aad_drv_cfg *t58xx_aad_cfg,
                      struct device *aad_dev, i2s_chan_handle_t *rx_handle) {
@@ -64,3 +65,5 @@ esp_err_t t5838_init(const i2s_pdm_rx_config_t *pdm_rx_cfg, i2s_chan_config_t *c
     };
     return ESP_OK;
 }
+
+#endif /* CONFIG_T58XX_AAD_TRIGGER */

@@ -35,6 +35,7 @@ esp_err_t i2s_init(const i2s_std_config_t *std_rx_cfg, i2s_chan_config_t *chan_c
     }
 }
 
+#ifdef CONFIG_T58XX_AAD_TRIGGER
 
 esp_err_t t5848_init(const i2s_std_config_t *std_rx_cfg, i2s_chan_config_t *chan_cfg, struct t58xx_aad_drv_cfg *t58xx_aad_cfg,
                      struct device *aad_dev, i2s_chan_handle_t *rx_handle) {
@@ -64,3 +65,5 @@ esp_err_t t5848_init(const i2s_std_config_t *std_rx_cfg, i2s_chan_config_t *chan
     };
     return ESP_OK;
 }
+
+#endif /* CONFIG_T58XX_AAD_TRIGGER */

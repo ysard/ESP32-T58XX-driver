@@ -15,6 +15,8 @@
 
 #include "t58xx_common.h"
 
+#ifdef CONFIG_T58XX_AAD_TRIGGER
+
 /* Although datasheet mentions that t58xx uses One Wire Protocol for configuration of AAD
  * functionality, it is really using two wires (THSEL and PDMCLK) for this, similar to the I2C
  * protocol. That's why FAKE2C names was used to describe this protocol. */
@@ -494,3 +496,5 @@ esp_err_t t58xx_aad_init(const struct device *dev)
 	drv_data->aad_cfg = drv_cfg;
 	return ESP_OK;
 }
+
+#endif /* CONFIG_T58XX_AAD_TRIGGER */
