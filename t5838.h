@@ -18,6 +18,14 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Init the T5838 PDM device
+ *
+ * @param[in] pdm_rx_cfg I2S PDM configuration.
+ * @param[in] chan_cfg Pointer to channel configuration, can be left to NULL to
+ *  automatically select the I2S port.
+ * @param[out] rx_handle Pointer to the channel handle, which will be populated.
+ */
 esp_err_t pdm_init(const i2s_pdm_rx_config_t *pdm_rx_cfg, i2s_chan_config_t *chan_cfg, i2s_chan_handle_t *rx_handle);
 
 #ifdef CONFIG_T58XX_AAD_TRIGGER
@@ -37,6 +45,10 @@ esp_err_t t5838_init(const i2s_pdm_rx_config_t *pdm_rx_cfg, i2s_chan_config_t *c
 
 #else
 
+/**
+ * @brief Bind pdm_init to a public alias equivalent to the function name
+ *  available when the AAD mode is enabled
+ */
 #define t5838_init pdm_init
 
 #endif /* CONFIG_T58XX_AAD_TRIGGER */
