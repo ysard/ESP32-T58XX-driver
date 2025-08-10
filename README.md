@@ -145,5 +145,5 @@ esp_err_t mic_configure() {
 
 This program is licensed under the Apache 2.0 License.
 
-Copyright (c) 2023 Irnas
+Copyright (c) 2023 Irnas<br>
 Copyright (c) 2025 Ysard
