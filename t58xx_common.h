@@ -9,6 +9,7 @@
 #ifndef T58XX_COMMON_H
 #define T58XX_COMMON_H
 
+#include "esp_err.h"
 #include "driver/gpio.h"
 
 #ifdef __cplusplus
