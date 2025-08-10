@@ -54,9 +54,9 @@ void IRAM_ATTR prv_clock_bitbang(const struct device *dev, uint16_t cycles, uint
 {
 	const struct t58xx_aad_drv_cfg *drv_cfg = dev->config;
 	for (int i = 0; i < cycles; i++) {
-		gpio_set_level(drv_cfg->pdmclk, 1);
+		gpio_set_level(drv_cfg->clk, 1);
 		ets_delay_us(period / 2);
-		gpio_set_level(drv_cfg->pdmclk, 0);
+		gpio_set_level(drv_cfg->clk, 0);
 		ets_delay_us(period / 2);
 	}
 }
@@ -463,7 +463,7 @@ esp_err_t t58xx_aad_init(const struct device *dev)
 		return err;
 	}
 
-	io_conf.pin_bit_mask = 1ULL << drv_cfg->pdmclk;
+	io_conf.pin_bit_mask = 1ULL << drv_cfg->clk;
 	err = gpio_config(&io_conf);
 	if (err != ESP_OK) {
 		ESP_LOGE(TAG, "Failed to configure PDMCLK pin");

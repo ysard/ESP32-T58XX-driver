@@ -237,7 +237,7 @@ struct t58xx_aad_drv_cfg {
 	bool wake_available; // false: manually handled outside the lib
 
     const gpio_num_t thsel;
-    const gpio_num_t pdmclk;
+    const gpio_num_t clk;
 };
 
 struct t58xx_aad_drv_data {
