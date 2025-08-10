@@ -3,20 +3,20 @@
 # Copyright (c) 2018 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-menu "T5838 Digital Microphone"
-	menuconfig T5838
+menu "T58XX Digital Microphone"
+	menuconfig T58XX
 		bool "Digital Microphone (Audio) Drivers"
 		default y
 		help
 		Enable Digital Microphone Driver Configuration.
 
-	if T5838
+	if T58XX
 
-	config T5838_AAD_TRIGGER
+	config T58XX_AAD_TRIGGER
 		bool "Enable AAD functionality"
 		default y
 		help
 		Enable AAD triggering functionality.
 
-	endif # T5838
+	endif # T58XX
 endmenu

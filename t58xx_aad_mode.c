@@ -1,43 +1,44 @@
-/** @file t5838_aad_mode.c
+/** @file t58xx_aad_mode.c
  *
  * @brief Functions related to the configuration of the AAD modes
- *  of the T5838 MEMS microphone by TDK.
+ *  of the T58XX MEMS microphone by TDK.
  *
  * @copyright (c) 2023 Irnas. All rights reserved.
  * @copyright (c) 2025 Ysard. All rights reserved.
  */
 
-#include "t5838.h"
-
+#include "esp_log.h"
 #include <rom/ets_sys.h> // ets_delay_us()
 // Workaround to access to private enum i2s_state_t and struct i2s_channel_obj_t definitions.
 // We use i2s_channel_obj_t only to test the `state` member of the i2s handle (value I2S_CHAN_STATE_RUNNING).
 #include "../i2s_private.h"
 
-/* Although datasheet mentions that t5838 uses One Wire Protocol for configuration of AAD
+#include "t58xx_common.h"
+
+/* Although datasheet mentions that t58xx uses One Wire Protocol for configuration of AAD
  * functionality, it is really using two wires (THSEL and PDMCLK) for this, similar to the I2C
  * protocol. That's why FAKE2C names was used to describe this protocol. */
-#define T5838_FAKE2C_START_PILOT_CLKS 10
-#define T5838_FAKE2C_ZERO	      1 * T5838_FAKE2C_START_PILOT_CLKS
-#define T5838_FAKE2C_ONE	      3 * T5838_FAKE2C_START_PILOT_CLKS
-#define T5838_FAKE2C_STOP	      130 /* according to datasheet >128clk cycles */
-#define T5838_FAKE2C_SPACE	      1 * T5838_FAKE2C_START_PILOT_CLKS
+#define T58XX_FAKE2C_START_PILOT_CLKS 10
+#define T58XX_FAKE2C_ZERO	      1 * T58XX_FAKE2C_START_PILOT_CLKS
+#define T58XX_FAKE2C_ONE	      3 * T58XX_FAKE2C_START_PILOT_CLKS
+#define T58XX_FAKE2C_STOP	      130 /* according to datasheet >128clk cycles */
+#define T58XX_FAKE2C_SPACE	      1 * T58XX_FAKE2C_START_PILOT_CLKS
 
-#define T5838_FAKE2C_POST_WRITE_CYCLES 60 /* According to datasheet >50clk cycles */
-#define T5838_FAKE2C_PRE_WRITE_CYCLES  60 /* According to datasheet >50clk cycles */
-#define T5838_FAKE2C_DEVICE_ADDRESS    0x53
+#define T58XX_FAKE2C_POST_WRITE_CYCLES 60 /* According to datasheet >50clk cycles */
+#define T58XX_FAKE2C_PRE_WRITE_CYCLES  60 /* According to datasheet >50clk cycles */
+#define T58XX_FAKE2C_DEVICE_ADDRESS    0x53
 
-#define T5838_FAKE2C_CLK_PERIOD_US 10 /* approx 100kHz */
+#define T58XX_FAKE2C_CLK_PERIOD_US 10 /* approx 100kHz */
 
 /* >2ms of clock is required before entering sleep with AAD  */
-#define T5838_ENTER_SLEEP_MODE_CLOCKING_TIME_US 2500
-#define T5838_ENTER_SLEEP_MODE_CLK_PERIOD_US	10 /* approx 100kHz */
+#define T58XX_ENTER_SLEEP_MODE_CLOCKING_TIME_US 2500
+#define T58XX_ENTER_SLEEP_MODE_CLK_PERIOD_US	10 /* approx 100kHz */
 
-#define T5838_RESET_TIME_MS 10 /* Time required for device to reset when power is disabled*/
+#define T58XX_RESET_TIME_MS 10 /* Time required for device to reset when power is disabled*/
 
-static const char *TAG = "T5838";
+static const char *TAG = "T58XX";
 
-struct t5838_address_data_pair {
+struct t58xx_address_data_pair {
 	uint8_t address;
 	uint8_t data;
 };
@@ -51,7 +52,7 @@ struct t5838_address_data_pair {
  */
 void IRAM_ATTR prv_clock_bitbang(const struct device *dev, uint16_t cycles, uint16_t period)
 {
-	const struct t5838_aad_drv_cfg *drv_cfg = dev->config;
+	const struct t58xx_aad_drv_cfg *drv_cfg = dev->config;
 	for (int i = 0; i < cycles; i++) {
 		gpio_set_level(drv_cfg->pdmclk, 1);
 		ets_delay_us(period / 2);
@@ -61,7 +62,7 @@ void IRAM_ATTR prv_clock_bitbang(const struct device *dev, uint16_t cycles, uint
 }
 
 /**
- * @brief Function for writing to T5838 registers using their proprietary "one wire" that isn't
+ * @brief Function for writing to T58XX registers using their proprietary "one wire" that isn't
  * really one wire. We refer to this protocol as fake2c to avoid confusion with actual one wire
  * protocol.
  *
@@ -75,9 +76,9 @@ void IRAM_ATTR prv_clock_bitbang(const struct device *dev, uint16_t cycles, uint
 // TODO: disable interrupts ?
 esp_err_t IRAM_ATTR prv_reg_write(const struct device *dev, uint8_t reg, uint8_t data)
 {
-	const struct t5838_aad_drv_cfg *drv_cfg = dev->config;
+	const struct t58xx_aad_drv_cfg *drv_cfg = dev->config;
 	/** Make sure there is no PDM transfer in progress, and we can take clock signal */
-	struct t5838_drv_data *pdm_data = drv_cfg->pdm_dev->data;
+	struct t58xx_drv_data *pdm_data = drv_cfg->i2s_dev->data;
 	if (pdm_data->rx_handle->state == I2S_CHAN_STATE_RUNNING) {
 		ESP_LOGE(TAG, "Cannot write to device while pdm is active");
 		return ESP_ERR_INVALID_STATE;
@@ -86,51 +87,51 @@ esp_err_t IRAM_ATTR prv_reg_write(const struct device *dev, uint8_t reg, uint8_t
 	ESP_LOGD(TAG, "prv_reg_write, reg: 0x%x, data: 0x%x", reg, data);
 
 	/** prepare data */
-	uint8_t wr_buf[] = {T5838_FAKE2C_DEVICE_ADDRESS << 1, reg, data};
+	uint8_t wr_buf[] = {T58XX_FAKE2C_DEVICE_ADDRESS << 1, reg, data};
 	/* put into wr_buf since it gets written first */
 	uint8_t cyc_buf;
 
 	/** start with thsel low */
 	gpio_set_level(drv_cfg->thsel, 0);
 	/** Clock device before writing to prepare device for communication */
-	prv_clock_bitbang(dev, T5838_FAKE2C_PRE_WRITE_CYCLES, T5838_FAKE2C_CLK_PERIOD_US);
+	prv_clock_bitbang(dev, T58XX_FAKE2C_PRE_WRITE_CYCLES, T58XX_FAKE2C_CLK_PERIOD_US);
 	/** write start condition*/
 	gpio_set_level(drv_cfg->thsel, 1);
-	prv_clock_bitbang(dev, T5838_FAKE2C_START_PILOT_CLKS, T5838_FAKE2C_CLK_PERIOD_US);
+	prv_clock_bitbang(dev, T58XX_FAKE2C_START_PILOT_CLKS, T58XX_FAKE2C_CLK_PERIOD_US);
 	/** write first space before writing data */
 	gpio_set_level(drv_cfg->thsel, 0);
-	prv_clock_bitbang(dev, T5838_FAKE2C_SPACE, T5838_FAKE2C_CLK_PERIOD_US);
+	prv_clock_bitbang(dev, T58XX_FAKE2C_SPACE, T58XX_FAKE2C_CLK_PERIOD_US);
 	/** write data */
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 8; j++) {
 
 			if (wr_buf[i] & (1 << (7 - j))) {
 				/* sending one */
-				cyc_buf = T5838_FAKE2C_ONE;
+				cyc_buf = T58XX_FAKE2C_ONE;
 			} else {
 				/* sending 0 */
-				cyc_buf = T5838_FAKE2C_ZERO;
+				cyc_buf = T58XX_FAKE2C_ZERO;
 			}
 			/** Send data bit */
 			gpio_set_level(drv_cfg->thsel, 1);
-			prv_clock_bitbang(dev, cyc_buf, T5838_FAKE2C_CLK_PERIOD_US);
+			prv_clock_bitbang(dev, cyc_buf, T58XX_FAKE2C_CLK_PERIOD_US);
 			/** Send space */
 			gpio_set_level(drv_cfg->thsel, 0);
-			prv_clock_bitbang(dev, T5838_FAKE2C_SPACE, T5838_FAKE2C_CLK_PERIOD_US);
+			prv_clock_bitbang(dev, T58XX_FAKE2C_SPACE, T58XX_FAKE2C_CLK_PERIOD_US);
 		}
 	}
 	/**write stop condition */
 	gpio_set_level(drv_cfg->thsel, 1);
-	prv_clock_bitbang(dev, T5838_FAKE2C_STOP, T5838_FAKE2C_CLK_PERIOD_US);
+	prv_clock_bitbang(dev, T58XX_FAKE2C_STOP, T58XX_FAKE2C_CLK_PERIOD_US);
 	gpio_set_level(drv_cfg->thsel, 0);
 
 	/**keep clock to apply */
-	prv_clock_bitbang(dev, T5838_FAKE2C_POST_WRITE_CYCLES, T5838_FAKE2C_CLK_PERIOD_US);
+	prv_clock_bitbang(dev, T58XX_FAKE2C_POST_WRITE_CYCLES, T58XX_FAKE2C_CLK_PERIOD_US);
 	return ESP_OK;
 }
 
 /**
- * @brief Function for writing to multiple T5838 registers from provided array of address data
+ * @brief Function for writing to multiple T58XX registers from provided array of address data
  * pairs.
  *
  * @param[in] dev Pointer to the device structure for the driver instance.
@@ -140,13 +141,13 @@ esp_err_t IRAM_ATTR prv_reg_write(const struct device *dev, uint8_t reg, uint8_t
  * @retval 0 if successful.
  * @retval negative errno code otherwise.
  */
-esp_err_t prv_multi_reg_write(const struct device *dev, struct t5838_address_data_pair *data, uint8_t num)
+esp_err_t prv_multi_reg_write(const struct device *dev, struct t58xx_address_data_pair *data, uint8_t num)
 {
 	esp_err_t err;
 	for (int i = 0; i < num; i++) {
 		err = prv_reg_write(dev, data[i].address, data[i].data);
 		if (err != ESP_OK) {
-			ESP_LOGE(TAG, "t5838 reg write err: %d, addr: 0x%x, data: 0x%x", err,
+			ESP_LOGE(TAG, "t58xx reg write err: %d, addr: 0x%x, data: 0x%x", err,
 				data[i].address, data[i].data);
 			return err;
 		}
@@ -164,17 +165,17 @@ esp_err_t prv_multi_reg_write(const struct device *dev, struct t5838_address_dat
  */
 esp_err_t prv_aad_unlock_sequence(const struct device *dev)
 {
-	struct t5838_aad_drv_data *drv_data = dev->data;
+	struct t58xx_aad_drv_data *drv_data = dev->data;
 	esp_err_t err;
 
 	/** This is unlock sequence for AAD modes provided in datasheet. */
-	struct t5838_address_data_pair write_data[] = {
+	struct t58xx_address_data_pair write_data[] = {
 		{0x5C, 0x00}, {0x3E, 0x00}, {0x6F, 0x00}, {0x3B, 0x00}, {0x4C, 0x00},
 	};
 
 	err = prv_multi_reg_write(dev, write_data, sizeof(write_data) / sizeof(write_data[0]));
 	if (err != ESP_OK) {
-		ESP_LOGE(TAG, "prv_t5838_multi_reg_write, err: %d", err);
+		ESP_LOGE(TAG, "prv_t58xx_multi_reg_write, err: %d", err);
 		return err;
 	}
 	drv_data->aad_unlocked = true;
@@ -182,19 +183,19 @@ esp_err_t prv_aad_unlock_sequence(const struct device *dev)
 	return ESP_OK;
 }
 
-esp_err_t t5838_aad_sleep(const struct device *dev)
+esp_err_t t58xx_aad_sleep(const struct device *dev)
 {
-	const struct t5838_aad_drv_cfg *drv_cfg = dev->config;
+	const struct t58xx_aad_drv_cfg *drv_cfg = dev->config;
 	/** Make sure there is no PDM transfer in progress, and we can take clock signal */
-	struct t5838_drv_data *pdm_data = drv_cfg->pdm_dev->data;
+	struct t58xx_drv_data *pdm_data = drv_cfg->i2s_dev->data;
 	if (pdm_data->rx_handle->state == I2S_CHAN_STATE_RUNNING) {
 		ESP_LOGE(TAG, "Cannot write to device while pdm is active");
 		return ESP_ERR_INVALID_STATE;
 	}
 
 	prv_clock_bitbang(
-		dev, T5838_ENTER_SLEEP_MODE_CLOCKING_TIME_US / T5838_ENTER_SLEEP_MODE_CLK_PERIOD_US,
-		T5838_ENTER_SLEEP_MODE_CLK_PERIOD_US);
+		dev, T58XX_ENTER_SLEEP_MODE_CLOCKING_TIME_US / T58XX_ENTER_SLEEP_MODE_CLK_PERIOD_US,
+		T58XX_ENTER_SLEEP_MODE_CLK_PERIOD_US);
 	return ESP_OK;
 }
 
@@ -204,9 +205,9 @@ esp_err_t t5838_aad_sleep(const struct device *dev)
 static void IRAM_ATTR prv_wake_cb_handler(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	struct t5838_aad_drv_data *drv_data = dev->data;
-	// const struct t5838_aad_drv_cfg *drv_cfg = drv_data->aad_cfg;
-	const struct t5838_aad_drv_cfg *drv_cfg = dev->config; // No ?
+	struct t58xx_aad_drv_data *drv_data = dev->data;
+	// const struct t58xx_aad_drv_cfg *drv_cfg = drv_data->aad_cfg;
+	const struct t58xx_aad_drv_cfg *drv_cfg = dev->config; // No ?
 
 	if (drv_data->int_handled) {
 		return;
@@ -214,7 +215,7 @@ static void IRAM_ATTR prv_wake_cb_handler(void *arg)
 	drv_data->int_handled = true;
 	esp_err_t err = gpio_intr_disable(drv_cfg->wake);
 	if (err != ESP_OK) {
-		ESP_DRAM_LOGE(DRAM_STR("T5838_ISR"), "gpio_intr_disable failed: %d", err);
+		ESP_DRAM_LOGE(DRAM_STR("T58XX_ISR"), "gpio_intr_disable failed: %d", err);
 		return;
 	}
 
@@ -223,29 +224,29 @@ static void IRAM_ATTR prv_wake_cb_handler(void *arg)
 	}
 }
 
-esp_err_t t5838_reset(const struct device *dev)
+esp_err_t t58xx_reset(const struct device *dev)
 {
-	const struct t5838_aad_drv_cfg *drv_cfg = dev->config;
-	struct t5838_aad_drv_data *drv_data = dev->data;
+	const struct t58xx_aad_drv_cfg *drv_cfg = dev->config;
+	struct t58xx_aad_drv_data *drv_data = dev->data;
 	if (!drv_cfg->micen_available) {
 		return ESP_ERR_NOT_SUPPORTED;
 	}
 	gpio_set_level(drv_cfg->micen, 0);
 
 	drv_data->aad_unlocked = false;
-	drv_data->aad_enabled_mode = T5838_AAD_SELECT_NONE;
+	drv_data->aad_enabled_mode = T58XX_AAD_SELECT_NONE;
 
 	/* Wait for device to power down and reapply power to reset it */
-	vTaskDelay(pdMS_TO_TICKS(T5838_RESET_TIME_MS));
+	vTaskDelay(pdMS_TO_TICKS(T58XX_RESET_TIME_MS));
 	gpio_set_level(drv_cfg->micen, 1);
 
 	return ESP_OK;
 }
 
-esp_err_t t5838_aad_wake_clear(const struct device *dev)
+esp_err_t t58xx_aad_wake_clear(const struct device *dev)
 {
-	const struct t5838_aad_drv_cfg *drv_cfg = dev->config;
-	struct t5838_aad_drv_data *drv_data = dev->data;
+	const struct t58xx_aad_drv_cfg *drv_cfg = dev->config;
+	struct t58xx_aad_drv_data *drv_data = dev->data;
 	esp_err_t err;
 
 	if (!drv_cfg->wake_available) {
@@ -265,9 +266,9 @@ esp_err_t t5838_aad_wake_clear(const struct device *dev)
 	return ESP_OK;
 }
 
-void t5838_aad_wake_handler_set(const struct device *dev, t5838_wake_handler_t handler)
+void t58xx_aad_wake_handler_set(const struct device *dev, t58xx_wake_handler_t handler)
 {
-	struct t5838_aad_drv_data *drv_data = dev->data;
+	struct t58xx_aad_drv_data *drv_data = dev->data;
 	drv_data->wake_handler = handler;
 }
 
@@ -281,12 +282,12 @@ void t5838_aad_wake_handler_set(const struct device *dev, t5838_wake_handler_t h
  * @retval 0 if successful.
  * @retval negative errno code if otherwise.
  */
-esp_err_t prv_aad_mode_set(const struct device *dev, struct t5838_address_data_pair *write_array,
+esp_err_t prv_aad_mode_set(const struct device *dev, struct t58xx_address_data_pair *write_array,
 			 uint8_t write_array_size)
 {
-	const struct t5838_aad_drv_cfg *drv_cfg = dev->config;
-	struct t5838_aad_drv_data *drv_data = dev->data;
-	struct t5838_drv_data *pdm_data = drv_cfg->pdm_dev->data;
+	const struct t58xx_aad_drv_cfg *drv_cfg = dev->config;
+	struct t58xx_aad_drv_data *drv_data = dev->data;
+	struct t58xx_drv_data *pdm_data = drv_cfg->i2s_dev->data;
 	esp_err_t err;
 
 	/** Note: The test to make sure there is no PDM transfer in progress, and we can take clock signal
@@ -313,11 +314,11 @@ esp_err_t prv_aad_mode_set(const struct device *dev, struct t5838_address_data_p
 
 	err = prv_multi_reg_write(dev, write_array, write_array_size);
 	if (err != ESP_OK) {
-		ESP_LOGE(TAG, "prv_t5838_multi_reg_write, err: %d", err);
+		ESP_LOGE(TAG, "prv_t58xx_multi_reg_write, err: %d", err);
 		return err;
 	}
 
-	t5838_aad_sleep(dev);
+	t58xx_aad_sleep(dev);
 
 	pdm_data->aad_child_dev = dev;
 
@@ -349,84 +350,84 @@ esp_err_t prv_aad_mode_set(const struct device *dev, struct t5838_address_data_p
 	return ESP_OK;
 }
 
-esp_err_t t5838_aad_a_mode_set(const struct device *dev, struct t5838_aad_a_conf *aadconf)
+esp_err_t t58xx_aad_a_mode_set(const struct device *dev, struct t58xx_aad_a_conf *aadconf)
 {
-	struct t5838_aad_drv_data *drv_data = dev->data;
+	struct t58xx_aad_drv_data *drv_data = dev->data;
 	esp_err_t err;
 
-	struct t5838_address_data_pair write_data[] = {
-		{T5838_REG_AAD_MODE, 0x00},
-		{T5838_REG_AAD_A_LPF, aadconf->aad_a_lpf},
-		{T5838_REG_AAD_A_THR, aadconf->aad_a_thr},
-		{T5838_REG_AAD_MODE, T5838_AAD_SELECT_A},
+	struct t58xx_address_data_pair write_data[] = {
+		{T58XX_REG_AAD_MODE, 0x00},
+		{T58XX_REG_AAD_A_LPF, aadconf->aad_a_lpf},
+		{T58XX_REG_AAD_A_THR, aadconf->aad_a_thr},
+		{T58XX_REG_AAD_MODE, T58XX_AAD_SELECT_A},
 	};
 	err = prv_aad_mode_set(dev, write_data, sizeof(write_data) / sizeof(write_data[0]));
 	if (err != ESP_OK) {
 		ESP_LOGE(TAG, "prv_aad_mode_set, err: %d", err);
 		return err;
 	}
-	drv_data->aad_enabled_mode = T5838_AAD_SELECT_A;
+	drv_data->aad_enabled_mode = T58XX_AAD_SELECT_A;
 	return ESP_OK;
 }
 
 /** Helper macro to avoid code duplication in D1 and D2 configuration functions */
 #define AAD_D_CONFIG_BUILDER(write_data, mode)                                                     \
-	struct t5838_address_data_pair write_data[] = {                                            \
-		{T5838_REG_AAD_MODE, 0x00},                                                        \
-		{T5838_REG_AAD_D_FLOOR_HI, (aadconf->aad_d_floor >> 8) & 0x1F},                    \
-		{T5838_REG_AAD_D_FLOOR_LO, aadconf->aad_d_floor & 0xFF},                           \
+	struct t58xx_address_data_pair write_data[] = {                                            \
+		{T58XX_REG_AAD_MODE, 0x00},                                                        \
+		{T58XX_REG_AAD_D_FLOOR_HI, (aadconf->aad_d_floor >> 8) & 0x1F},                    \
+		{T58XX_REG_AAD_D_FLOOR_LO, aadconf->aad_d_floor & 0xFF},                           \
 		{0x2C, 0x32},                                                                      \
 		{0x2D, 0xC0},                                                                      \
-		{T5838_REG_AAD_D_REL_PULSE_MIN_LO, aadconf->aad_d_rel_pulse_min & 0xFF},           \
-		{T5838_REG_AAD_D_ABS_REL_PULSE_MIN_SHARED,                                         \
+		{T58XX_REG_AAD_D_REL_PULSE_MIN_LO, aadconf->aad_d_rel_pulse_min & 0xFF},           \
+		{T58XX_REG_AAD_D_ABS_REL_PULSE_MIN_SHARED,                                         \
 		 ((aadconf->aad_d_abs_pulse_min >> 4) / 0xF0) |                                    \
 			 ((aadconf->aad_d_rel_pulse_min >> 8) & 0x0F)},                            \
-		{T5838_REG_AAD_D_ABS_PULSE_MIN_LO, aadconf->aad_d_abs_pulse_min & 0xFF},           \
-		{T5838_REG_AAD_D_ABS_THR_LO, aadconf->aad_d_abs_thr & 0xFF},                       \
-		{T5838_REG_AAD_D_ABS_THR_HI, ((aadconf->aad_d_abs_thr >> 8) & 0x1F) | 0x40},       \
-		{T5838_REG_AAD_D_REL_THR, aadconf->aad_d_rel_thr},                                 \
-		{T5838_REG_AAD_MODE, mode},                                                        \
+		{T58XX_REG_AAD_D_ABS_PULSE_MIN_LO, aadconf->aad_d_abs_pulse_min & 0xFF},           \
+		{T58XX_REG_AAD_D_ABS_THR_LO, aadconf->aad_d_abs_thr & 0xFF},                       \
+		{T58XX_REG_AAD_D_ABS_THR_HI, ((aadconf->aad_d_abs_thr >> 8) & 0x1F) | 0x40},       \
+		{T58XX_REG_AAD_D_REL_THR, aadconf->aad_d_rel_thr},                                 \
+		{T58XX_REG_AAD_MODE, mode},                                                        \
 	}
 
-esp_err_t t5838_aad_d1_mode_set(const struct device *dev, struct t5838_aad_d_conf *aadconf)
+esp_err_t t58xx_aad_d1_mode_set(const struct device *dev, struct t58xx_aad_d_conf *aadconf)
 {
-	struct t5838_aad_drv_data *drv_data = dev->data;
+	struct t58xx_aad_drv_data *drv_data = dev->data;
 	esp_err_t err;
-	AAD_D_CONFIG_BUILDER(write_data, T5838_AAD_SELECT_D1);
+	AAD_D_CONFIG_BUILDER(write_data, T58XX_AAD_SELECT_D1);
 	err = prv_aad_mode_set(dev, write_data, sizeof(write_data) / sizeof(write_data[0]));
 	if (err != ESP_OK) {
 		ESP_LOGE(TAG, "prv_aad_mode_set, err: %d", err);
 		return err;
 	}
-	drv_data->aad_enabled_mode = T5838_AAD_SELECT_D1;
+	drv_data->aad_enabled_mode = T58XX_AAD_SELECT_D1;
 	return ESP_OK;
 }
 
-esp_err_t t5838_aad_d2_mode_set(const struct device *dev, struct t5838_aad_d_conf *aadconf)
+esp_err_t t58xx_aad_d2_mode_set(const struct device *dev, struct t58xx_aad_d_conf *aadconf)
 {
-	struct t5838_aad_drv_data *drv_data = dev->data;
+	struct t58xx_aad_drv_data *drv_data = dev->data;
 	esp_err_t err;
-	AAD_D_CONFIG_BUILDER(write_data, T5838_AAD_SELECT_D2);
+	AAD_D_CONFIG_BUILDER(write_data, T58XX_AAD_SELECT_D2);
 	err = prv_aad_mode_set(dev, write_data, sizeof(write_data) / sizeof(write_data[0]));
 	if (err != ESP_OK) {
 		ESP_LOGE(TAG, "prv_aad_mode_set, err: %d", err);
 		return err;
 	}
-	drv_data->aad_enabled_mode = T5838_AAD_SELECT_D2;
+	drv_data->aad_enabled_mode = T58XX_AAD_SELECT_D2;
 	return ESP_OK;
 }
 
-esp_err_t t5838_aad_mode_disable(const struct device *dev)
+esp_err_t t58xx_aad_mode_disable(const struct device *dev)
 {
-	const struct t5838_aad_drv_cfg *drv_cfg = dev->config;
-	struct t5838_aad_drv_data *drv_data = dev->data;
-	struct t5838_drv_data *pdm_data = drv_cfg->pdm_dev->data;
+	const struct t58xx_aad_drv_cfg *drv_cfg = dev->config;
+	struct t58xx_aad_drv_data *drv_data = dev->data;
+	struct t58xx_drv_data *pdm_data = drv_cfg->i2s_dev->data;
 
 	esp_err_t err;
 	/** Set AAD mode to zero while we configure device to avoid problems */
-	err = prv_reg_write(dev, T5838_REG_AAD_MODE, 0);
+	err = prv_reg_write(dev, T58XX_REG_AAD_MODE, 0);
 	if (err != ESP_OK) {
-		ESP_LOGE(TAG, "prv_t5838_reg_write, err: %d", err);
+		ESP_LOGE(TAG, "prv_t58xx_reg_write, err: %d", err);
 		return err;
 	}
 	/** Disable interrupts */
@@ -437,18 +438,18 @@ esp_err_t t5838_aad_mode_disable(const struct device *dev)
 			return err;
 		}
 	}
-	drv_data->aad_enabled_mode = T5838_AAD_SELECT_NONE;
+	drv_data->aad_enabled_mode = T58XX_AAD_SELECT_NONE;
 	drv_data->aad_unlocked = false;
 	pdm_data->aad_child_dev = NULL;
 	return ESP_OK;
 }
 
-esp_err_t t5838_aad_init(const struct device *dev)
+esp_err_t t58xx_aad_init(const struct device *dev)
 {
-	const struct t5838_aad_drv_cfg *drv_cfg = dev->config;
-	struct t5838_aad_drv_data *drv_data = dev->data;
+	const struct t58xx_aad_drv_cfg *drv_cfg = dev->config;
+	struct t58xx_aad_drv_data *drv_data = dev->data;
 
-	/* T5838 specific configuration */
+	/* T58XX specific configuration */
 	gpio_config_t io_conf = {
 		.intr_type = GPIO_INTR_DISABLE,
 		.mode = GPIO_MODE_OUTPUT,
@@ -477,7 +478,7 @@ esp_err_t t5838_aad_init(const struct device *dev)
 			ESP_LOGE(TAG, "Failed to configure MICEN pin");
 			return err;
 		}
-		t5838_reset(dev);
+		t58xx_reset(dev);
 	}
 
 	if (drv_cfg->wake_available) {
