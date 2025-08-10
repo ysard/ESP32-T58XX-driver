@@ -8,6 +8,7 @@
  */
 
 #include "esp_log.h"
+#include "hal/gpio_ll.h" // WARNING: GPIO internal struct, unstable, do not use, use at home only!!
 #include <rom/ets_sys.h> // ets_delay_us()
 // Workaround to access to private enum i2s_state_t and struct i2s_channel_obj_t definitions.
 // We use i2s_channel_obj_t only to test the `state` member of the i2s handle (value I2S_CHAN_STATE_RUNNING).
@@ -45,6 +46,26 @@ struct t58xx_address_data_pair {
 	uint8_t data;
 };
 
+// Fast GPIO change for improted bitbanging
+// See https://esp32.com/viewtopic.php?t=27963
+static inline __attribute__((always_inline))
+void directWriteLow(uint32_t pin)
+{
+	if ( pin < 32 )
+		GPIO.out_w1tc = ((uint32_t)1 << pin);
+	else if ( pin < 34 )
+		GPIO.out1_w1tc.val = ((uint32_t)1 << (pin - 32));
+}
+
+static inline __attribute__((always_inline))
+void directWriteHigh(uint32_t pin)
+{
+	if ( pin < 32 )
+		GPIO.out_w1ts = ((uint32_t)1 << pin);
+	else if ( pin < 34 )
+		GPIO.out1_w1ts.val = ((uint32_t)1 << (pin - 32));
+}
+
 /**
  * @brief drive clock pin in bitbang fashion.
  *
@@ -56,9 +77,9 @@ void IRAM_ATTR prv_clock_bitbang(const struct device *dev, uint16_t cycles, uint
 {
 	const struct t58xx_aad_drv_cfg *drv_cfg = dev->config;
 	for (int i = 0; i < cycles; i++) {
-		gpio_set_level(drv_cfg->clk, 1);
+		directWriteHigh(drv_cfg->clk);
 		ets_delay_us(period / 2);
-		gpio_set_level(drv_cfg->clk, 0);
+		directWriteLow(drv_cfg->clk);
 		ets_delay_us(period / 2);
 	}
 }
