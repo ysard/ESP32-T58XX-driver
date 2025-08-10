@@ -75,16 +75,23 @@ enum t58xx_aad_a_lpf {
  * @note According to datasheet there are 8 possible values, but table in datasheet describes 9
  * values. it seems to be 2,5dB step for LSB but only every other value exist in table.
  */
-enum t5838_aad_a_thr {
-	T5838_AAD_A_THR_60dB = 0x00,
-	T5838_AAD_A_THR_65dB = 0x02,
-	T5838_AAD_A_THR_70dB = 0x04,
-	T5838_AAD_A_THR_75dB = 0x06,
-	T5838_AAD_A_THR_80dB = 0x08,
-	T5838_AAD_A_THR_85dB = 0x0A,
-	T5838_AAD_A_THR_90dB = 0x0C,
-	T5838_AAD_A_THR_95dB = 0x0E,
-	T5838_AAD_A_THR_97_5dB = 0x0F
+enum t58xx_aad_a_thr {
+	T58XX_AAD_A_THR_60dB = 0x00,
+	T5848_AAD_A_THR_62_5dB = 0x01,
+	T58XX_AAD_A_THR_65dB = 0x02,
+	T5848_AAD_A_THR_67_5dB = 0x03,
+	T58XX_AAD_A_THR_70dB = 0x04,
+	T5848_AAD_A_THR_72_5dB = 0x05,
+	T58XX_AAD_A_THR_75dB = 0x06,
+	T5848_AAD_A_THR_77_5dB = 0x07,
+	T58XX_AAD_A_THR_80dB = 0x08,
+	T5848_AAD_A_THR_82_5dB = 0x09,
+	T58XX_AAD_A_THR_85dB = 0x0A,
+	T5848_AAD_A_THR_87_5dB = 0x0B,
+	T58XX_AAD_A_THR_90dB = 0x0C,
+	T5848_AAD_A_THR_92_5dB = 0x0D,
+	T58XX_AAD_A_THR_95dB = 0x0E,
+	T58XX_AAD_A_THR_97_5dB = 0x0F
 };
 
 /**
