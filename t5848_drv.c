@@ -36,17 +36,6 @@ esp_err_t i2s_init(const i2s_std_config_t *std_rx_cfg, i2s_chan_config_t *chan_c
 }
 
 
-/**
- * @brief Init the T5848 I2S device & prepare AAD settings.
- *
- * @param[in] std_rx_cfg I2S STD configuration.
- * @param[in] chan_cfg Pointer to channel configuration, can be left to NULL to
- *  automatically select the I2S port.
- * @param[in] t58xx_aad_cfg Pointer to AAD pinout configuration.
- * @param[out] aad_dev Pointer to device structure which will be populated,
- *  ready to be used for AAD configurations.
- * @param[out] rx_handle Pointer to the channel handle, which will be populated.
- */
 esp_err_t t5848_init(const i2s_std_config_t *std_rx_cfg, i2s_chan_config_t *chan_cfg, struct t58xx_aad_drv_cfg *t58xx_aad_cfg,
                      struct device *aad_dev, i2s_chan_handle_t *rx_handle) {
     esp_err_t err = i2s_init(std_rx_cfg, chan_cfg, rx_handle);
