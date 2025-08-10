@@ -1,9 +1,11 @@
 /** @file t58xx_common.h
  *
- * @brief Header for added AAD functionality for T5838 implemented in our modified PDM driver.
+ * @brief Header for added AAD functionality for T58XX.
  *
- * @par
- * COPYRIGHT NOTICE: (c) 2023 Irnas.  All rights reserved.
+ * @note Originally developed for the Zephyr platform.
+ *
+ * @copyright (c) 2023 Irnas.  All rights reserved.
+ * @copyright (c) 2025 Ysard.  All rights reserved.
  */
 
 #ifndef T58XX_COMMON_H
