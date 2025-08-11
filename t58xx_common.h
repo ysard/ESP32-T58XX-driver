@@ -22,6 +22,7 @@ extern "C" {
 #define T58XX_REG_AAD_MODE			 0x29
 #define T58XX_REG_AAD_D_FLOOR_HI		 0x2A
 #define T58XX_REG_AAD_D_FLOOR_LO		 0x2B
+#define T58XX_REG_AAD_D_ALGO_SEL		 0x2D
 #define T58XX_REG_AAD_D_REL_PULSE_MIN_LO	 0x2E
 #define T58XX_REG_AAD_D_ABS_REL_PULSE_MIN_SHARED 0x2F
 #define T58XX_REG_AAD_D_ABS_PULSE_MIN_LO	 0x30
@@ -92,6 +93,23 @@ enum t58xx_aad_a_thr {
 	T5848_AAD_A_THR_92_5dB = 0x0D,
 	T58XX_AAD_A_THR_95dB = 0x0E,
 	T58XX_AAD_A_THR_97_5dB = 0x0F
+};
+
+
+/**
+ * @brief AAD D threshold algorithms
+ *
+ * This setting selects desired threshold algorithms
+ * (relative/absolute) for AAD D mode.
+ * @note Datasheet claim that T5838 does not support this register
+ *  but the values may work... Both algorithms seems to be enabled
+ *  by default on T5838 & T5848.
+ */
+enum t58xx_aad_d_algo_select {
+	T58XX_AAD_D_ALGO_SELECT_NONE = 0x00,
+	T58XX_AAD_D_ALGO_SELECT_REL = 0x40,
+	T58XX_AAD_D_ALGO_SELECT_ABS = 0x80,
+	T58XX_AAD_D_ALGO_SELECT_BOTH = 0xC0
 };
 
 /**
