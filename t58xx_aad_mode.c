@@ -379,7 +379,7 @@ esp_err_t t58xx_aad_a_mode_set(const struct device *dev, struct t58xx_aad_a_conf
 		{T58XX_REG_AAD_D_FLOOR_HI, (aadconf->aad_d_floor >> 8) & 0x1F},                    \
 		{T58XX_REG_AAD_D_FLOOR_LO, aadconf->aad_d_floor & 0xFF},                           \
 		{0x2C, 0x32},                                                                      \
-		{0x2D, 0xC0},                                                                      \
+		{T58XX_REG_AAD_D_ALGO_SEL, aadconf->aad_d_algo_sel & 0xC0},                        \
 		{T58XX_REG_AAD_D_REL_PULSE_MIN_LO, aadconf->aad_d_rel_pulse_min & 0xFF},           \
 		{T58XX_REG_AAD_D_ABS_REL_PULSE_MIN_SHARED,                                         \
 		 ((aadconf->aad_d_abs_pulse_min >> 4) / 0xF0) |                                    \

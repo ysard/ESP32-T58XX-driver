@@ -221,6 +221,7 @@ struct t58xx_aad_a_conf {
  * This structure holds full configuration of AAD D1 and D2 modes to be written to device.
  */
 struct t58xx_aad_d_conf {
+	enum t58xx_aad_d_algo_select aad_d_algo_sel;
 	enum t58xx_aad_d_floor aad_d_floor;
 	enum t58xx_aad_d_rel_pulse_min aad_d_rel_pulse_min;
 	enum t58xx_aad_d_abs_pulse_min aad_d_abs_pulse_min;
