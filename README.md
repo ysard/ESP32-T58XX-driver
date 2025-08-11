@@ -121,7 +121,6 @@ esp_err_t configure_mic() {
 #define GPIO_MIC_WS      7
 #define SAMPLE_RATE      12000 // in Hz
 
-struct device t5848_aad_dev;
 i2s_chan_handle_t rx_handle;
 
 /**
