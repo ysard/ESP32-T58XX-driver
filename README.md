@@ -16,6 +16,11 @@ The activation and configuration for all AAD Modes is carried out via a one wire
 write on the THSEL pin that reuses the CLK (T5838) / SCK (T5848) pin.
 This library is essentially about this one wire custom protocol.
 
+## ⚠️ Disclaimer ⚠️
+
+At this time, the library has not yet been thoroughly tested and may contain errors.
+Please report them by opening an issue or a PR. <3
+
 ## Configuration
 
 Tested with ESP-IDF framework version of PlatformIO (@ 3.50401.0 (5.4.1)).
