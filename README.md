@@ -2,14 +2,18 @@
 
 An ESP-IDF/PlatformIO I2S driver for the T5838 & T5848 MEMS microphones by TDK.
 
-This is a port of the AAD driver (see below) originally developed for the [Zephyr platform](https://github.com/IRNAS/irnas-t5838-driver).
+This is a port of the AAD driver (see below) originally developed for the
+[Zephyr platform](https://github.com/IRNAS/irnas-t5838-driver).
 
 The T5838 is a PDM microphone, whereas the T5848 is a I2S microphone.
 Both are supported by the I2S (Inter-IC Sound) bus of the ESP32 chips.
 
-Apart from this detail, the two devices are similar and feature Acoustic Activity Detect (AAD) functionality, allowing them to remain powered on in low-power mode while being able to wake up in response to an acoustic signal.
+Apart from this detail, the two devices are similar and feature Acoustic Activity Detect
+(AAD) functionality, allowing them to remain powered on in low-power mode while being able
+to wake up in response to an acoustic signal.
 
-The activation and configuration for all AAD Modes is carried out via a one wire write on the THSEL pin that reuses the CLK (T5838) / SCK (T5848) pin.
+The activation and configuration for all AAD Modes is carried out via a one wire
+write on the THSEL pin that reuses the CLK (T5838) / SCK (T5848) pin.
 This library is essentially about this one wire custom protocol.
 
 ## Configuration
