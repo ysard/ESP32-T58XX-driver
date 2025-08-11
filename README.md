@@ -53,6 +53,9 @@ AAD setting is reachable here (enabled by default):
  * - High quality mode: 31250-57812 Hz (CLK 2-3.7 MHz) */
 #define SAMPLE_RATE      12000 // in Hz
 
+struct device t5838_aad_dev;
+i2s_chan_handle_t rx_handle;
+
 /**
  * @brief Configure the I2S port + AAD profile of the microphone
  * After this function the port is in READY state.
