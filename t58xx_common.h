@@ -95,7 +95,6 @@ enum t58xx_aad_a_thr {
 	T58XX_AAD_A_THR_97_5dB = 0x0F
 };
 
-
 /**
  * @brief AAD D threshold algorithms
  *
