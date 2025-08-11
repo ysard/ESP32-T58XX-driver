@@ -48,6 +48,11 @@ AAD setting is reachable here (enabled by default):
 #define GPIO_MIC_THSEL   5
 #define GPIO_MIC_PDMCLK  6 // Also used as the clock pin for the AAD config
 
+/* Sample rates (with a downsampling setting I2S_PDM_DSR_8S):
+ * - Low power mode: 6250-12500 Hz (CLK 400-800 kHz)
+ * - High quality mode: 31250-57812 Hz (CLK 2-3.7 MHz) */
+#define SAMPLE_RATE      12000 // in Hz
+
 /**
  * @brief Configure the I2S port + AAD profile of the microphone
  * After this function the port is in READY state.
@@ -111,7 +116,7 @@ esp_err_t configure_mic() {
 #define GPIO_MIC_THSEL   5
 #define GPIO_MIC_SCK     6
 #define GPIO_MIC_WS      7
-
+#define SAMPLE_RATE      12000 // in Hz
 
 struct device t5848_aad_dev;
 i2s_chan_handle_t rx_handle;
