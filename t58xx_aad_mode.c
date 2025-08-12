@@ -292,8 +292,8 @@ esp_err_t prv_aad_mode_set(const struct device *dev, struct t58xx_address_data_p
 	struct t58xx_drv_data *pdm_data = drv_cfg->i2s_dev->data;
 	esp_err_t err;
 
-	/** Note: The test to make sure there is no PDM transfer in progress, and we can take clock signal
-	 * is made in prv_aad_unlock_sequence & prv_reg_write */
+	/** Note: The test to make sure there is no PDM/I2S transfer in progress,
+	 * and we can take clock signal is made in prv_aad_unlock_sequence & prv_reg_write */
 
 	/** Between AAD mode config & AAD activation with the sleep sequence,
 	 * there is an acknowledgement on the WAKE pin of 12us.
