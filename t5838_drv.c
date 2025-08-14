@@ -14,14 +14,17 @@ static const char *TAG = "T5838_PDM";
 
 esp_err_t pdm_init(const i2s_pdm_rx_config_t *pdm_rx_cfg, i2s_chan_config_t *chan_cfg, i2s_chan_handle_t *rx_handle) {
     esp_err_t err;
+    i2s_chan_config_t *l_chan_cfg;
 
     /* Allocate an I2S RX channel */
     if (chan_cfg == NULL) {
         /* With I2S_NUM_AUTO rx channel will be registered on another I2S,
          * if no other available I2S unit found it will return ESP_ERR_NOT_FOUND */
-        *chan_cfg = (i2s_chan_config_t) I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
+        l_chan_cfg = &(i2s_chan_config_t) I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
+    } else {
+        l_chan_cfg = chan_cfg;
     }
-    err = i2s_new_channel(chan_cfg, NULL, rx_handle);
+    err = i2s_new_channel(l_chan_cfg, NULL, rx_handle);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "i2s_new_channel failed: %d", err);
         return err;
