@@ -79,7 +79,7 @@ void IRAM_ATTR prv_clock_bitbang(const struct device *dev, uint16_t cycles, uint
 esp_err_t IRAM_ATTR prv_reg_write(const struct device *dev, uint8_t reg, uint8_t data)
 {
 	const struct t58xx_aad_drv_cfg *drv_cfg = dev->config;
-	/** Make sure there is no PDM transfer in progress, and we can take clock signal */
+	/** Make sure there is no PDM/I2S transfer in progress, and we can take clock signal */
 	struct t58xx_drv_data *pdm_data = drv_cfg->i2s_dev->data;
 	if (pdm_data->rx_handle->state == I2S_CHAN_STATE_RUNNING) {
 		ESP_LOGE(TAG, "Cannot write to device while pdm is active");
@@ -188,7 +188,7 @@ esp_err_t prv_aad_unlock_sequence(const struct device *dev)
 esp_err_t t58xx_aad_sleep(const struct device *dev)
 {
 	const struct t58xx_aad_drv_cfg *drv_cfg = dev->config;
-	/** Make sure there is no PDM transfer in progress, and we can take clock signal */
+	/** Make sure there is no PDM/I2S transfer in progress, and we can take clock signal */
 	struct t58xx_drv_data *pdm_data = drv_cfg->i2s_dev->data;
 	if (pdm_data->rx_handle->state == I2S_CHAN_STATE_RUNNING) {
 		ESP_LOGE(TAG, "Cannot write to device while pdm is active");
