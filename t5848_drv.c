@@ -11,6 +11,10 @@
 
 static const char *TAG = "T5848_I2S";
 
+struct t58xx_drv_data t58xx_data;
+struct device t58xx_std_dev;
+struct t58xx_aad_drv_data t58xx_aad_data;
+
 
 esp_err_t i2s_init(const i2s_std_config_t *std_rx_cfg, i2s_chan_config_t *chan_cfg, i2s_chan_handle_t *rx_handle) {
     esp_err_t err;
@@ -47,10 +51,10 @@ esp_err_t t5848_init(const i2s_std_config_t *std_rx_cfg, i2s_chan_config_t *chan
         return err;
 
     /* Build the device structure for AAD configuration */
-    struct t58xx_drv_data t58xx_data = {
+    t58xx_data = (struct t58xx_drv_data) {
         .rx_handle = *rx_handle
     };
-    struct device t58xx_std_dev = {
+    t58xx_std_dev = (struct device) {
         .config = std_rx_cfg,
         .data = &t58xx_data
     };
@@ -60,7 +64,7 @@ esp_err_t t5848_init(const i2s_std_config_t *std_rx_cfg, i2s_chan_config_t *chan
     // and ready to be used for AAD config through THSEL pin)
     t58xx_aad_cfg->i2s_dev = &t58xx_std_dev;
 
-    struct t58xx_aad_drv_data t58xx_aad_data;
+    t58xx_aad_data = (struct t58xx_aad_drv_data) T58XX_AAD_DEFAULT_DATA();
 
     *aad_dev = (struct device) {
         .config = t58xx_aad_cfg,

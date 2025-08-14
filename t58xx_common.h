@@ -279,6 +279,19 @@ struct t58xx_aad_drv_data {
     const struct t58xx_aad_drv_cfg *aad_cfg;
 };
 
+/**
+ * @brief get default AAD internal data structure
+ * @note aad_cfg is populated in t58xx_aad_init()
+ */
+#define T58XX_AAD_DEFAULT_DATA() { \
+    .aad_unlocked = false, \
+    .aad_enabled_mode = T58XX_AAD_SELECT_NONE, \
+    .cb_configured = false, \
+    .int_handled = false, \
+    .wake_handler = NULL, \
+    .aad_cfg = NULL, \
+}
+
 #endif /* CONFIG_T58XX_AAD_TRIGGER */
 
 #ifdef CONFIG_T58XX_AAD_TRIGGER

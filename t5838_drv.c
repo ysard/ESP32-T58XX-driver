@@ -11,6 +11,10 @@
 
 static const char *TAG = "T5838_PDM";
 
+struct t58xx_drv_data t58xx_data;
+struct device t58xx_pdm_dev;
+struct t58xx_aad_drv_data t58xx_aad_data;
+
 
 esp_err_t pdm_init(const i2s_pdm_rx_config_t *pdm_rx_cfg, i2s_chan_config_t *chan_cfg, i2s_chan_handle_t *rx_handle) {
     esp_err_t err;
@@ -47,10 +51,10 @@ esp_err_t t5838_init(const i2s_pdm_rx_config_t *pdm_rx_cfg, i2s_chan_config_t *c
         return err;
 
     /* Build the device structure for AAD configuration */
-    struct t58xx_drv_data t58xx_data = {
+    t58xx_data = (struct t58xx_drv_data) {
         .rx_handle = *rx_handle
     };
-    struct device t58xx_pdm_dev = {
+    t58xx_pdm_dev = (struct device) {
         .config = pdm_rx_cfg,
         .data = &t58xx_data
     };
@@ -60,7 +64,7 @@ esp_err_t t5838_init(const i2s_pdm_rx_config_t *pdm_rx_cfg, i2s_chan_config_t *c
     // and ready to be used for AAD config through THSEL pin)
     t58xx_aad_cfg->i2s_dev = &t58xx_pdm_dev;
 
-    struct t58xx_aad_drv_data t58xx_aad_data;
+    t58xx_aad_data = (struct t58xx_aad_drv_data) T58XX_AAD_DEFAULT_DATA();
 
     *aad_dev = (struct device) {
         .config = t58xx_aad_cfg,
