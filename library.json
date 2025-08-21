@@ -1,0 +1,20 @@
+{
+  "name": "ESP32-T58XX",
+  "version": "0.1.0",
+  "description": "An ESP-IDF/PlatformIO I2S driver for the T5838 & T5848 MEMS microphones by TDK.",
+  "keywords": "t5838, t5848, mems, microphone",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/ysard/ESP32-T58XX-driver"
+  },
+  "authors":
+  [
+    {
+      "name": "Ysard"
+    }
+  ],
+  "license": "Apache-2.0",
+  "frameworks": ["arduino", "espidf"],
+  "platforms": ["espressif32"]
+}
