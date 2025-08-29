@@ -67,7 +67,10 @@ esp_err_t configure_mic() {
     i2s_pdm_rx_config_t pdm_rx_cfg = {
         .clk_cfg = I2S_PDM_RX_CLK_DEFAULT_CONFIG(SAMPLE_RATE),
         // Note: for IDF 5.5, use I2S_PDM_RX_SLOT_PCM_FMT_DEFAULT_CONFIG macro for I2S0 port
-        .slot_cfg = I2S_PDM_RX_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO), // Data bit width only support 16 bits
+        .slot_cfg = I2S_PDM_RX_SLOT_DEFAULT_CONFIG(
+            I2S_DATA_BIT_WIDTH_16BIT, // Data bit width only supports 16 bits
+            I2S_SLOT_MODE_MONO
+        ),
         .gpio_cfg = {
             .clk = GPIO_MIC_PDMCLK,
             .din = GPIO_MIC_DATA,
@@ -133,7 +136,10 @@ esp_err_t mic_configure() {
     /* Init the channel into STD RX mode */
     i2s_std_config_t std_rx_cfg = {
         .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(SAMPLE_RATE),
-        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO), // 8/16/24/32-bit width sample data
+        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(
+            I2S_DATA_BIT_WIDTH_16BIT, // 8/16/24/32-bit width sample data
+            I2S_SLOT_MODE_STEREO
+        ),
         .gpio_cfg = {
             .mclk = I2S_GPIO_UNUSED,
             .bclk = GPIO_MIC_SCK,
@@ -148,7 +154,7 @@ esp_err_t mic_configure() {
         },
     };
 
-    err = t5848_init(&pdm_rx_cfg, NULL, &rx_handle);
+    err = t5848_init(&std_rx_cfg, NULL, &rx_handle);
     if (err != ESP_OK)
         return err;
 
