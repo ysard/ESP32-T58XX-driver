@@ -40,6 +40,7 @@ esp_err_t pdm_init(const i2s_pdm_rx_config_t *pdm_rx_cfg, i2s_chan_config_t *cha
         ESP_LOGE(TAG, "i2s_channel_init_pdm_rx_mode failed: %d", err);
         return err;
     }
+    return err;
 }
 
 #ifdef CONFIG_T58XX_AAD_TRIGGER

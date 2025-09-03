@@ -40,6 +40,7 @@ esp_err_t i2s_init(const i2s_std_config_t *std_rx_cfg, i2s_chan_config_t *chan_c
         ESP_LOGE(TAG, "i2s_channel_init_std_mode failed: %d", err);
         return err;
     }
+    return err;
 }
 
 #ifdef CONFIG_T58XX_AAD_TRIGGER
