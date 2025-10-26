@@ -386,10 +386,13 @@ esp_err_t t58xx_reset(const struct device *dev);
  * @brief Put T58XX into sleep mode when AAD is enabled. Is called after
  * writing to AAD registers.
  *
- * @note Make sure that the interrupt has been rearmed via `t58xx_aad_wake_clear`.
+ * @note Make sure that the interrupt has been rearmed via `t58xx_aad_wake_clear`
+ *  if it is handled by the lib.
  *
- * function clocks device for value set in T58XX_ENTER_SLEEP_MODE_CLOCKING_TIME_US to enable AAD.
- * TODO: make sure t58xx_aad_wake_clear is called to rearm the interrupt
+ * @todo Should currently work for AAD A, AAD D2 modes which require a frequency
+ *  between 50 kHz and 200 kHz for 2 ms followed by setting CLK = OFF.
+ *  BUT, AAD D1 seems to need a constant CLK = 768 kHz that is not handled for now!
+ *
  * @param[in] dev Pointer to the device structure for the driver instance.
  */
 esp_err_t t58xx_aad_sleep(const struct device *dev);
