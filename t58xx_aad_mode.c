@@ -197,7 +197,8 @@ esp_err_t t58xx_aad_sleep(const struct device *dev)
 
 	// Clock 100kHz for AAD A, AAD D2 ONLY!
 	prv_clock_bitbang(
-		dev, T58XX_ENTER_SLEEP_MODE_CLOCKING_TIME_US / T58XX_ENTER_SLEEP_MODE_CLK_PERIOD_US,
+		dev,
+		T58XX_ENTER_SLEEP_MODE_CLOCKING_TIME_US / T58XX_ENTER_SLEEP_MODE_CLK_PERIOD_US,
 		T58XX_ENTER_SLEEP_MODE_CLK_PERIOD_US);
 	return ESP_OK;
 }
