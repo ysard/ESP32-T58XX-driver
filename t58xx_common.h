@@ -298,7 +298,7 @@ struct t58xx_aad_drv_data {
 /**
  * @brief Set AAD wake pin interrupt handler function
  *
- * Function will set handler function to be called when interrupt is triggered. We can set handler
+ * Will set handler function to be called when interrupt is triggered. We can set handler
  * at any time, but t58xx_aad_<*>_mode_set() must be called for interrupt triggering to be enabled.
  *
  * @note when interrupt gets triggered it will disable further interrupts until
@@ -320,9 +320,9 @@ void t58xx_aad_wake_handler_set(const struct device *dev, t58xx_wake_handler_t h
 esp_err_t t58xx_aad_wake_clear(const struct device *dev);
 
 /**
- * @brief Configure T58XX device into AAD A mode
+ * @brief Configure T58XX device into AAD A mode (not voice band)
  *
- * Function will configure and run T58XX AAD and configure interrupts on wake pin.
+ * Will configure and run T58XX AAD and configure interrupts on wake pin.
  *
  * @param[in] dev Pointer to the device structure for the driver instance.
  * @param[in] aadconf Pointer to the structure containing AAD A configuration
@@ -333,9 +333,9 @@ esp_err_t t58xx_aad_wake_clear(const struct device *dev);
 esp_err_t t58xx_aad_a_mode_set(const struct device *dev, struct t58xx_aad_a_conf *aadconf);
 
 /**
- * @brief Configure T58XX device into AAD D1 mode
+ * @brief Configure T58XX device into AAD D1 mode (voice band)
  *
- * Function will configure and run T58XX AAD and configure interrupts on wake pin.
+ * Will configure and run T58XX AAD and configure interrupts on wake pin.
  *
  * @param[in] dev Pointer to the device structure for the driver instance.
  * @param[in] aadconf Pointer to the structure containing AAD D configuration
@@ -346,9 +346,9 @@ esp_err_t t58xx_aad_a_mode_set(const struct device *dev, struct t58xx_aad_a_conf
 esp_err_t t58xx_aad_d1_mode_set(const struct device *dev, struct t58xx_aad_d_conf *aadconf);
 
 /**
- * @brief Configure T58XX device into AAD D2 mode
+ * @brief Configure T58XX device into AAD D2 mode (voice band)
  *
- * Function will configure and run T58XX AAD and configure interrupts on wake pin.
+ * Will configure and run T58XX AAD and configure interrupts on wake pin.
  *
  * @param[in] dev Pointer to the device structure for the driver instance.
  * @param[in] aadconf Pointer to the structure containing AAD D configuration
@@ -361,7 +361,7 @@ esp_err_t t58xx_aad_d2_mode_set(const struct device *dev, struct t58xx_aad_d_con
 /**
  * @brief Disable AAD functionality
  *
- * Function will disable AAD functionality and disable interrupts on wake pin.
+ * Will disable AAD functionality and disable interrupts on wake pin.
  *
  * @param[in] dev Pointer to the device structure for the driver instance.
  *
@@ -383,7 +383,7 @@ esp_err_t t58xx_aad_mode_disable(const struct device *dev);
 esp_err_t t58xx_reset(const struct device *dev);
 
 /**
- * @brief Function for putting T58XX into sleep mode with AAD is enabled. Is called after
+ * @brief Put T58XX into sleep mode when AAD is enabled. Is called after
  * writing to AAD registers.
  *
  * @note Make sure that the interrupt has been rearmed via `t58xx_aad_wake_clear`.
@@ -395,7 +395,7 @@ esp_err_t t58xx_reset(const struct device *dev);
 esp_err_t t58xx_aad_sleep(const struct device *dev);
 
 /**
- * @brief Function for initializing T58XX AAD trigger device. Called during device boot.
+ * @brief Initialize T58XX AAD trigger device.
  *
  * @param[in] dev Pointer to the device structure for the driver instance.
  *

@@ -46,7 +46,7 @@ struct t58xx_address_data_pair {
 };
 
 /**
- * @brief drive clock pin in bitbang fashion.
+ * @brief Drive clock pin in bitbang fashion.
  *
  * @param[in] dev Pointer to the device structure for the driver instance.
  * @param[in] cycles Number of cycles to clock.
@@ -64,7 +64,7 @@ void IRAM_ATTR prv_clock_bitbang(const struct device *dev, uint16_t cycles, uint
 }
 
 /**
- * @brief Function for writing to T58XX registers using their proprietary "one wire" that isn't
+ * @brief Write to T58XX registers using their proprietary "one wire" that isn't
  * really one wire. We refer to this protocol as fake2c to avoid confusion with actual one wire
  * protocol.
  *
@@ -133,7 +133,7 @@ esp_err_t IRAM_ATTR prv_reg_write(const struct device *dev, uint8_t reg, uint8_t
 }
 
 /**
- * @brief Function for writing to multiple T58XX registers from provided array of address data
+ * @brief Write to multiple T58XX registers from provided array of address data
  * pairs.
  *
  * @param[in] dev Pointer to the device structure for the driver instance.
@@ -158,7 +158,7 @@ esp_err_t prv_multi_reg_write(const struct device *dev, struct t58xx_address_dat
 }
 
 /**
- * @brief Function helper for sending predefined sequence that unlocks aad mode.
+ * @brief Helper for sending predefined sequence that unlocks aad mode.
  *
  * @param[in] dev Pointer to the device structure for the driver instance.
  *
@@ -275,7 +275,7 @@ void t58xx_aad_wake_handler_set(const struct device *dev, t58xx_wake_handler_t h
 }
 
 /**
- * @brief Function for setting AAD mode from provided array of address data pairs.
+ * @brief Set AAD mode from provided array of address data pairs.
  *
  * @param[in] dev Pointer to the device structure for the driver instance.
  * @param[in] write_array Array of address data pairs with setup sequence to write to device.
